@@ -67,13 +67,14 @@ int main()
         // Obs³uga b³êdu w przypadku nieudanego za³adowania czcionki
         return -1;
     }
-    sf::Text weightText = createText("Total Weight: 0 kg", font, 20, sf::Color::Black, 10, 10);
+    sf::Text weightText = createText("Total Weight: 0 kg", font, 20, sf::Color::Black, 300, 10);
 
     sf::Text instructionsText = createText("INSTRUCTIONS\n\n"
+        "Nacisnij spacje aby wstrzymac program\n"
         "Press A to add passengers\n"
         "Enter the number of passengers\n"
         "Press the number keys (1-9) to select the target floor\n"
-        "Press Enter to confirm", font, 16, sf::Color::Black, 1000, 10);
+        "Press Enter to confirm", font, 16, sf::Color::Black, 700, 10);
 
     sf::Text pauseText = createText("PAUZA", font, 50, sf::Color::Red, window.getSize().x / 2, window.getSize().y / 2);
     pauseText.setOrigin(pauseText.getLocalBounds().width / 2, pauseText.getLocalBounds().height / 2);
@@ -177,7 +178,7 @@ int main()
                     if (totalWeight == 0.0f)
                     {
                         // Zatrzymywanie windy na 2 sekundy na piêtrze
-                        if (stopFloorClock.getElapsedTime().asSeconds() >= 2.0f)
+                        if (stopFloorClock.getElapsedTime().asSeconds() >= 100.0f)
                         {
                             targetFloors.erase(targetFloors.begin());
                             stoppingAtFloor = false;
