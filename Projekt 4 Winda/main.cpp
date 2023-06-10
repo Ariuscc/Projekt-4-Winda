@@ -75,6 +75,10 @@ int main()
         "Press the number keys (1-9) to select the target floor\n"
         "Press Enter to confirm", font, 16, sf::Color::Black, 1000, 10);
 
+    sf::Text pauseText = createText("PAUZA", font, 50, sf::Color::Red, window.getSize().x / 2, window.getSize().y / 2);
+    pauseText.setOrigin(pauseText.getLocalBounds().width / 2, pauseText.getLocalBounds().height / 2);
+
+
     sf::Clock clock;
     float deltaTime = 0.0f;
 
@@ -86,6 +90,8 @@ int main()
 
     // Zegar odmierzaj¹cy czas zatrzymania windy na piêtrze
     sf::Clock stopFloorClock;
+
+    bool isPaused = false; // Flaga wskazuj¹ca, czy program jest wstrzymany
 
     while (window.isOpen())
     {
@@ -135,61 +141,68 @@ int main()
                     }
                     numPassengersEntering = 0;
                 }
-            }
-        }
-
-        // Poruszanie wind¹
-        float distance = std::abs(elevator.getPosition().y - targetY);
-        if (distance > 1.0f)
-        {
-            float direction = (targetY < elevator.getPosition().y) ? -1.0f : 1.0f;
-            float movement = direction * ElevatorSpeed * deltaTime;
-
-            elevator.move(0, movement);
-        }
-        else
-        {
-            // Winda osi¹gnê³a docelowe piêtro
-            if (!floorQueue.empty())
-            {
-                int nextFloor = floorQueue.front();
-                floorQueue.pop();
-                targetFloors.push_back(nextFloor);
-                stoppingAtFloor = true;
-                targetY = nextFloor * FloorHeight;
-                currentFloor = nextFloor;
-            }
-            else if (!targetFloors.empty() && stoppingAtFloor)
-            {
-                // Sprawdzanie, czy winda jest pusta po zatrzymaniu siê na piêtrze
-                if (totalWeight == 0.0f)
+                else if (event.key.code == sf::Keyboard::Space)
                 {
-                    // Zatrzymywanie windy na 2 sekundy na piêtrze
-                    if (stopFloorClock.getElapsedTime().asSeconds() >= 2.0f)
+                    isPaused = !isPaused; // Odwrócenie stanu pauzy
+                }
+            }
+        }
+
+        if (!isPaused) // Sprawdzenie, czy program nie jest wstrzymany
+        {
+            // Poruszanie wind¹
+            float distance = std::abs(elevator.getPosition().y - targetY);
+            if (distance > 1.0f)
+            {
+                float direction = (targetY < elevator.getPosition().y) ? -1.0f : 1.0f;
+                float movement = direction * ElevatorSpeed * deltaTime;
+
+                elevator.move(0, movement);
+            }
+            else
+            {
+                // Winda osi¹gnê³a docelowe piêtro
+                if (!floorQueue.empty())
+                {
+                    int nextFloor = floorQueue.front();
+                    floorQueue.pop();
+                    targetFloors.push_back(nextFloor);
+                    stoppingAtFloor = true;
+                    targetY = nextFloor * FloorHeight;
+                    currentFloor = nextFloor;
+                }
+                else if (!targetFloors.empty() && stoppingAtFloor)
+                {
+                    // Sprawdzanie, czy winda jest pusta po zatrzymaniu siê na piêtrze
+                    if (totalWeight == 0.0f)
                     {
-                        targetFloors.erase(targetFloors.begin());
-                        stoppingAtFloor = false;
-                        stopFloorClock.restart();
+                        // Zatrzymywanie windy na 2 sekundy na piêtrze
+                        if (stopFloorClock.getElapsedTime().asSeconds() >= 2.0f)
+                        {
+                            targetFloors.erase(targetFloors.begin());
+                            stoppingAtFloor = false;
+                            stopFloorClock.restart();
+                        }
                     }
                 }
             }
-        }
 
-        // Aktualizowanie wag pasa¿erów
-        if (passengers.size() > 0)
-        {
-            for (int i = static_cast<int>(passengers.size()) - 1; i >= 0; --i)
+            // Aktualizowanie wag pasa¿erów
+            if (passengers.size() > 0)
             {
-                if (targetFloors[0] == currentFloor)
+                for (int i = static_cast<int>(passengers.size()) - 1; i >= 0; --i)
                 {
-                    passengers.erase(passengers.begin() + i);
-                    totalWeight -= PassengerWeight;
+                    if (targetFloors[0] == currentFloor)
+                    {
+                        passengers.erase(passengers.begin() + i);
+                        totalWeight -= PassengerWeight;
+                    }
                 }
             }
-        }
 
-        // Aktualizowanie tekstu z wag¹ pasa¿erów
-        weightText.setString("Total Weight: " + std::to_string(totalWeight) + " kg");
+            // Aktualizowanie tekstu z wag¹ pasa¿erów
+            weightText.setString("Total Weight: " + std::to_string(totalWeight) + " kg");
+        }
 
         window.clear(sf::Color::White);
 
@@ -207,6 +220,11 @@ int main()
 
         // Rysowanie instrukcji
         window.draw(instructionsText);
+
+        if (isPaused) // Wyœwietlanie tekstu "PAUZA" w przypadku wstrzymania programu
+        {
+            window.draw(pauseText);
+        }
 
         window.display();
     }
