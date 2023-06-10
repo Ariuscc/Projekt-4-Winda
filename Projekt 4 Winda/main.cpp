@@ -50,15 +50,16 @@ int main()
     sf::RectangleShape elevator = createElevator();
 
     std::vector<sf::RectangleShape> floors;
-    for (int i = 0; i < NumFloors; ++i)
+    for (int i = NumFloors - 1; i >= 0; --i)
     {
         sf::RectangleShape floor = createFloor(i * FloorHeight);
         floors.push_back(floor);
     }
 
     std::queue<int> floorQueue;
-    int currentFloor = 0;
-    float targetY = 0.0f;
+    floorQueue.push(6); // Dodajemy parter do kolejki
+    int currentFloor = 6;
+    float targetY = currentFloor * FloorHeight;
 
     float totalWeight = 0.0f;
     sf::Font font;
@@ -107,12 +108,12 @@ int main()
                 if (event.key.code == sf::Keyboard::Num0)
                 {
                     if (!passengerEntering)
-                        floorQueue.push(0);
+                        floorQueue.push(NumFloors - 1);
                 }
                 else if (event.key.code >= sf::Keyboard::Num1 && event.key.code <= sf::Keyboard::Num9)
                 {
-                    int floor = event.key.code - sf::Keyboard::Num1 + 1;
-                    if (floor <= NumFloors)
+                    int floor = NumFloors - (event.key.code - sf::Keyboard::Num1 + 1);
+                    if (floor >= 0)
                     {
                         if (!passengerEntering)
                             floorQueue.push(floor);
@@ -178,7 +179,7 @@ int main()
                     if (totalWeight == 0.0f)
                     {
                         // Zatrzymywanie windy na 2 sekundy na piêtrze
-                        if (stopFloorClock.getElapsedTime().asSeconds() >= 100.0f)
+                        if (stopFloorClock.getElapsedTime().asSeconds() >= 2.0f)
                         {
                             targetFloors.erase(targetFloors.begin());
                             stoppingAtFloor = false;
