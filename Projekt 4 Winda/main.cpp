@@ -160,11 +160,12 @@ int main()
                 float movement = direction * ElevatorSpeed * deltaTime;
 
                 elevator.move(0, movement);
+                stopFloorClock.restart();
             }
             else
             {
                 // Winda osi¹gnê³a docelowe piêtro
-                if (!floorQueue.empty())
+                if (!floorQueue.empty() && !stoppingAtFloor)
                 {
                     int nextFloor = floorQueue.front();
                     floorQueue.pop();
@@ -173,19 +174,23 @@ int main()
                     targetY = nextFloor * FloorHeight;
                     currentFloor = nextFloor;
                 }
-                else if (!targetFloors.empty() && stoppingAtFloor)
+                else if (!targetFloors.empty())
                 {
                     // Sprawdzanie, czy winda jest pusta po zatrzymaniu siê na piêtrze
                     if (totalWeight == 0.0f)
                     {
                         // Zatrzymywanie windy na 2 sekundy na piêtrze
-                        if (stopFloorClock.getElapsedTime().asSeconds() >= 2.0f)
+                        if (stopFloorClock.getElapsedTime().asSeconds() >= 1.0f)
                         {
                             targetFloors.erase(targetFloors.begin());
                             stoppingAtFloor = false;
                             stopFloorClock.restart();
                         }
                     }
+                }
+                else if (stopFloorClock.getElapsedTime().asSeconds() >= 5.0f)
+                {
+                    floorQueue.push(NumFloors - 1);
                 }
             }
 
