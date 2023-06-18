@@ -2,6 +2,7 @@
 #include <queue>
 #include <vector>
 #include <string>
+#include <iostream>
 
 const float FloorHeight = 100.0f;      // Wysokoœæ piêtra
 const float ElevatorWidth = 100.0f;    // Szerokoœæ windy
@@ -9,12 +10,8 @@ const float ElevatorHeight = 100.0f;   // Wysokoœæ windy
 const float ElevatorSpeed = 200.0f;    // Prêdkoœæ windy (piksele na sekundê)
 const int NumFloors = 7;               // Liczba piêter
 const float PassengerWeight = 70.0f;   // Waga pasa¿era w kg
-const float MaxPassengers = 7;        // Maksymalna iloœæ pasa¿erów
+const float MaxPassengers = 8;        // Maksymalna iloœæ pasa¿erów
 
-struct Passenger
-{
-	int targetFloor;  // Piêtro docelowe pasa¿era
-};
 
 sf::RectangleShape createFloor(float y)
 {
@@ -60,6 +57,8 @@ int main()
 	std::queue<int> passengerQueue;
 	std::queue<int> waitQueue;
 	std::queue<int> floorwaitQueue;
+	std::queue<int> temp1Queue;
+	std::queue<int> temp2Queue;
 	std::queue<int> lastpassengerQueue;
 	floorQueue.push(6); // Dodajemy parter do kolejki
 	int currentFloor = 6;
@@ -78,7 +77,7 @@ int main()
 		"Nacisnij A zeby dodac pasazera\n"
 		"Wprowadz na ktorym pietrze wsiada dany pasazer\n"
 		"Wprowadz na ktore pietro jedzie dany pasazer\n"
-		"Po skonczeniu nacisnij spacje", font, 16, sf::Color::Black, 700, 10);
+		"Po skonczeniu nacisnij Enter", font, 16, sf::Color::Black, 700, 10);
 
 	sf::Text wsiadaText = createText("Gdzie wsiada?", font, 50, sf::Color::Red, window.getSize().x / 2, window.getSize().y / 2);
 	wsiadaText.setOrigin(wsiadaText.getLocalBounds().width / 2, wsiadaText.getLocalBounds().height / 2);
@@ -93,7 +92,6 @@ int main()
 	int numPassengersEntering = 0;
 	bool passengerEntering = false;
 	bool stoppingAtFloor = false;
-	std::vector<Passenger> passengers;
 
 	// Zegar odmierzaj¹cy czas zatrzymania windy na piêtrze
 	sf::Clock stopFloorClock;
@@ -102,9 +100,11 @@ int main()
 
 	int floor = 0;
 	float direction = 1.0f;
-	int numPassengers = 0;
+	int numPassengers = 1;
 	bool waitEntering = false;
 	int howmany = 0;
+	int display = 0;
+	int num = 1;
 
 	while (window.isOpen())
 	{
@@ -121,7 +121,7 @@ int main()
 					isPaused = true;
 					passengerEntering = false;
 				}
-				else if (isPaused && event.key.code >= sf::Keyboard::Num0 && event.key.code <= sf::Keyboard::Num9)
+				else if (isPaused && event.key.code >= sf::Keyboard::Num0 && event.key.code <= sf::Keyboard::Num7)
 				{
 					if (!passengerEntering) {
 						floor = NumFloors - (event.key.code - sf::Keyboard::Num1 + 1);
@@ -137,40 +137,82 @@ int main()
 						passengerEntering = false;
 					}
 				}
-				else if (passengerEntering && event.key.code == sf::Keyboard::Enter)
+				else if (event.key.code == sf::Keyboard::Enter && passengerEntering == false)
 				{
-					passengerEntering = false;
-					for (int i = 0; i < numPassengersEntering; ++i)
-					{
-						Passenger passenger;
-						passenger.targetFloor = currentFloor;
-						passengers.push_back(passenger);
-					}
-					numPassengersEntering = 0;
-				}
-				else if (event.key.code == sf::Keyboard::Space)
-				{
-					isPaused = !isPaused; // Odwrócenie stanu pauzy
+					isPaused = false; // Odwrócenie stanu pauzy
 				}
 			}
 		}
 
 		if (!isPaused) // Sprawdzenie, czy program nie jest wstrzymany
 		{
-			while (!waitQueue.empty() && numPassengers <= 6)
+			while (!waitQueue.empty() && numPassengers < MaxPassengers)      // w ka¿dej chwili dodanych do kolejki mo¿e byæ do 8 pasa¿erów
 			{
-				passengerQueue.push(waitQueue.front());  // dodanie pasa¿era do kolejki
+				passengerQueue.push(waitQueue.front());    // dodanie pasa¿era do kolejki
 				waitQueue.pop();
 				numPassengers++;
 				howmany++;
 			}
-			while (!floorwaitQueue.empty()) {
-				if ((lastpassengerQueue.front() != currentFloor) or howmany == 0) break; // dodanie piêtra do kolejki dopiero kiedy pasa¿er wsi¹dzie
-				floorQueue.push(floorwaitQueue.front());
-				lastpassengerQueue.pop();
-				floorwaitQueue.pop();
-				howmany--;
+			while (!passengerQueue.empty()) {
+				if (passengerQueue.front() == currentFloor) {          //jeœli wiêcej pasa¿erów na danym piêtrze, wszyscy wsiadaj¹
+					passengerQueue.pop();
+					num++;
+				}
+				else {
+					temp1Queue.push(passengerQueue.front());
+					passengerQueue.pop();
+				}
 			}
+			while (!temp1Queue.empty()) {
+				passengerQueue.push(temp1Queue.front());
+				temp1Queue.pop();
+			}
+			if (!passengerQueue.empty())
+			{
+				temp1Queue.push(passengerQueue.front());
+				passengerQueue.pop();
+			}
+			while (!passengerQueue.empty()) {
+				if (passengerQueue.front() == temp1Queue.front()) {
+					temp1Queue.push(passengerQueue.front());
+					passengerQueue.pop();
+				}
+				else {
+					temp2Queue.push(passengerQueue.front());
+					passengerQueue.pop();
+				}
+			}
+			while (!temp1Queue.empty()) {
+				passengerQueue.push(temp1Queue.front());
+				temp1Queue.pop();
+			}
+			while (!temp2Queue.empty()) {
+				passengerQueue.push(temp2Queue.front());
+				temp2Queue.pop();
+			}
+			while (!lastpassengerQueue.empty()) {
+				if (lastpassengerQueue.front() == currentFloor && howmany > 0) {        // dodanie piêtra do kolejki dopiero kiedy pasa¿er wsi¹dzie
+					floorQueue.push(floorwaitQueue.front());
+					floorwaitQueue.pop();
+					lastpassengerQueue.pop();
+					howmany--;
+				}
+				else {
+					temp1Queue.push(lastpassengerQueue.front());
+					lastpassengerQueue.pop();
+					temp2Queue.push(floorwaitQueue.front());
+					floorwaitQueue.pop();
+				}
+			}
+			while (!temp1Queue.empty()) {
+				lastpassengerQueue.push(temp1Queue.front());
+				temp1Queue.pop();
+			}
+			while (!temp2Queue.empty()) {
+				floorwaitQueue.push(temp2Queue.front());
+				temp2Queue.pop();
+			}
+			display = num;
 
 			// Poruszanie wind¹
 			float distance = std::abs(elevator.getPosition().y - targetY);
@@ -184,6 +226,8 @@ int main()
 			}
 			else
 			{
+				// Aktualizowanie wag pasa¿erów
+				totalWeight = display * PassengerWeight;
 				// Winda osi¹gnê³a docelowe piêtro
 				if ((!floorQueue.empty() or !passengerQueue.empty()) && !stoppingAtFloor)
 				{
@@ -193,32 +237,52 @@ int main()
 						nextFloor = floorQueue.front();
 						floorQueue.pop();
 						numPassengers--;
+						num--;
 					}
 					else if (floorQueue.empty())
 					{
 						nextFloor = passengerQueue.front();
 						passengerQueue.pop();
+						num++;
 					}     // winda zatrzymuje siê po pasa¿era jeœli jest pusta
 					else if (abs(currentFloor - floorQueue.front()) > abs(currentFloor - passengerQueue.front()) && ((currentFloor - passengerQueue.front()) * (currentFloor - floorQueue.front())) >= 0)
 					{
 						nextFloor = passengerQueue.front();
 						passengerQueue.pop();
+						num++;
 					}    // winda zatrzymuje siê po pasa¿era jeœli jest on po drodze do aktualnego celu
 					else
 					{
 						nextFloor = floorQueue.front();
 						floorQueue.pop();
 						numPassengers--;
+						num--;
 					}
 					targetFloors.push_back(nextFloor);
 					stoppingAtFloor = true;
 					targetY = nextFloor * FloorHeight;
 					currentFloor = nextFloor;
+					while (!floorQueue.empty()) {
+						if (floorQueue.front() == currentFloor) {            //dodanie do kolejki miejsca docelowego ka¿dego pasa¿era na danym piêtrze
+							floorQueue.pop();
+							numPassengers--;
+							num--;
+						}
+						else {
+							temp1Queue.push(floorQueue.front());
+							floorQueue.pop();
+						}
+					}
+					while (!temp1Queue.empty()) {
+						floorQueue.push(temp1Queue.front());
+						temp1Queue.pop();
+					}
+
 				}
 				else if (!targetFloors.empty())
 				{
-					// Zatrzymywanie windy na 2 sekundy na piêtrze
-					if (stopFloorClock.getElapsedTime().asSeconds() >= 0.2f)
+					// Zatrzymywanie windy na 0.5 sekundy na piêtrze
+					if (stopFloorClock.getElapsedTime().asSeconds() >= 0.5f)
 					{
 						targetFloors.erase(targetFloors.begin());
 						stoppingAtFloor = false;
@@ -227,21 +291,12 @@ int main()
 				}
 				else if (stopFloorClock.getElapsedTime().asSeconds() >= 5.0f)
 				{
-					floorQueue.push(NumFloors - 1);
+					targetFloors.push_back(NumFloors - 1);
+					stoppingAtFloor = true;
+					targetY = (NumFloors - 1) * FloorHeight;
+					currentFloor = (NumFloors - 1);
 				}
-			}
-
-			// Aktualizowanie wag pasa¿erów
-			if (passengers.size() > 0)
-			{
-				for (int i = static_cast<int>(passengers.size()) - 1; i >= 0; --i)
-				{
-					if (targetFloors[0] == currentFloor)
-					{
-						passengers.erase(passengers.begin() + i);
-						totalWeight -= PassengerWeight;
-					}
-				}
+				display = num;
 			}
 
 			// Aktualizowanie tekstu z wag¹ pasa¿erów
